@@ -1,9 +1,13 @@
 import Fastify from "fastify";
 
+import { sql } from "drizzle-orm";
+import { db } from "./db/lumidb.js";
+
 const app = Fastify({ logger: true });
 
-app.get("/health", async () => {
-    return { status: "ok" };
+app.get("/health/db", async () => {
+    await db.execute(sql`select 1`);
+    return { status: "ok", database: "connected" };
 });
 
 app.get("/hello", async() => {
