@@ -1,7 +1,7 @@
 import Fastify from "fastify";
-
 import { sql } from "drizzle-orm";
 import { db } from "./db/lumidb.js";
+import { userRoutes } from "./users/user.routes.js";
 
 const app = Fastify({ logger: true });
 
@@ -11,8 +11,10 @@ app.get("/health/db", async () => {
 });
 
 app.get("/hello", async() => {
-    return { message: "Hello, Lumi!" };
+    return { message: "Lumi-API running on port 3000" };
 })
+
+await app.register(userRoutes);
 
 try {
     await app.listen({ port: 3000 });
