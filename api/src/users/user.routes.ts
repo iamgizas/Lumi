@@ -3,6 +3,7 @@ import argon2 from "argon2";
 import { db } from "../db/lumidb.js";
 import { users } from "../db/schema.js";
 import { registerUserSchema } from "./user.schemas.js";
+import { isUniqueViolation } from "../db/errors.js";
 
 export async function userRoutes(app: FastifyInstance) {
   app.post("/users", async (request, reply) => {
@@ -21,17 +22,24 @@ export async function userRoutes(app: FastifyInstance) {
     const { name, nickname, email, password } = parsed.data;
     const passwordHash = await argon2.hash(password);
 
-    const [user] = await db
+    try {
+      const [user] = await db
         .insert(users)
         .values({ name, nickname, email, passwordHash })
         .returning({
-            id: users.id,
-            name: users.name,
-            nickname: users.nickname,
-            email: users.email,
-            createdAt: users.createdAt,
+          id: users.id,
+          name: users.name,
+          nickname: users.nickname,
+          email: users.email,
+          createdAt: users.createdAt,
         });
 
-    return reply.status(201).send(user);
+      return reply.status(201).send(user);
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        return reply.status(409).send({ error: "email_aready_registered" });
+      }
+      throw error;
+    }
   });
 }
