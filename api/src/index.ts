@@ -2,6 +2,9 @@ import Fastify from "fastify";
 import { sql } from "drizzle-orm";
 import { db } from "./db/lumidb.js";
 import { userRoutes } from "./users/user.routes.js";
+import jwt from '@fastify/jwt';
+import { env } from "./config.js"
+import { authRoutes } from "./auth/auth.routes.js";
 
 const app = Fastify({ logger: true });
 
@@ -14,7 +17,9 @@ app.get("/hello", async() => {
     return { message: "Lumi-API running on port 3000" };
 })
 
+await app.register(jwt, { secret: env.JWT_SECRET });
 await app.register(userRoutes);
+await app.register(authRoutes);
 
 try {
     await app.listen({ port: 3000 });
