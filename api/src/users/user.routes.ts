@@ -4,6 +4,8 @@ import { db } from "../db/lumidb.js";
 import { users } from "../db/schema.js";
 import { registerUserSchema } from "./user.schemas.js";
 import { isUniqueViolation } from "../db/errors.js";
+import { eq } from "drizzle-orm";
+import { authenticate } from "../auth/authenticate.js";
 
 export async function userRoutes(app: FastifyInstance) {
   app.post("/users", async (request, reply) => {
@@ -11,7 +13,7 @@ export async function userRoutes(app: FastifyInstance) {
 
     if (!parsed.success) {
       return reply.status(400).send({
-        error: "validation_error",
+        error: "validation error",
         issues: parsed.error.issues.map((issue) => ({
           path: issue.path.join("."),
           message: issue.message,
@@ -42,4 +44,26 @@ export async function userRoutes(app: FastifyInstance) {
       throw error;
     }
   });
+
+  app.get("/me", { preHandler: authenticate }, async (request, reply) => {
+    const [user] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        nickname: users.nickname,
+        email: users.email,
+        phone: users.phone,
+        avatarUrl: users.avatarUrl,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.id, request.user.sub))
+      .limit(1)
+    
+    if (!user) {
+      return reply.status(404).send({ error: "user not found" })
+    }
+
+    return user;
+  })
 }
