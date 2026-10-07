@@ -6,19 +6,14 @@ import { registerUserSchema } from "./user.schemas.js";
 import { isUniqueViolation } from "../db/errors.js";
 import { eq } from "drizzle-orm";
 import { authenticate } from "../auth/authenticate.js";
+import { sendValidationError } from "../http/validation.js";
 
 export async function userRoutes(app: FastifyInstance) {
   app.post("/users", async (request, reply) => {
     const parsed = registerUserSchema.safeParse(request.body);
 
     if (!parsed.success) {
-      return reply.status(400).send({
-        error: "validation error",
-        issues: parsed.error.issues.map((issue) => ({
-          path: issue.path.join("."),
-          message: issue.message,
-        })),
-      });
+      return sendValidationError(reply, parsed.error);
     }
 
     const { name, nickname, email, password } = parsed.data;
