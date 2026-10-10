@@ -1,5 +1,9 @@
 import type { FastifyReply } from "fastify";
-import type { ZodError } from "zod";
+import { ZodError, z } from "zod";
+
+export const idParamsSchema = z.object({
+    id: z.uuid()
+});
 
 export function sendValidationError(reply: FastifyReply, error: ZodError) {
     return reply.status(400).send({

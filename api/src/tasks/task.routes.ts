@@ -7,56 +7,56 @@ import { sendValidationError } from "../http/validation.js";
 import { createTaskSchema, taskParamsSchema, updateTaskSchema } from "./task.schemas.js";
 
 function ownedTask(taskId: string, userId: string) {
-    return and(eq(tasks.id, taskId), eq(tasks.userId, userId));
+  return and(eq(tasks.id, taskId), eq(tasks.userId, userId));
 }
 
 export async function taskRoutes(app: FastifyInstance) {
-    app.addHook("preHandler", authenticate);
+  app.addHook("preHandler", authenticate);
 
-    app.post("/tasks", async (request, reply) => {
-        const parsed = createTaskSchema.safeParse(request.body);
+  app.post("/tasks", async (request, reply) => {
+    const parsed = createTaskSchema.safeParse(request.body);
 
-        if (!parsed.success) {
-            return sendValidationError(reply, parsed.error);
-        }
+    if (!parsed.success) {
+      return sendValidationError(reply, parsed.error);
+    }
 
-        const [task] = await db
-            .insert(tasks)
-            .values({ ...parsed.data, userId: request.user.sub })
-            .returning();
+    const [task] = await db
+      .insert(tasks)
+      .values({ ...parsed.data, userId: request.user.sub })
+      .returning();
 
-        return reply.status(201).send(task);
-    });
+    return reply.status(201).send(task);
+  });
 
-    app.get("/tasks", async (request) => {
-        return db
-            .select()
-            .from(tasks)
-            .where(eq(tasks.userId, request.user.sub))
-            .orderBy(desc(tasks.createdAt));
-    });
+  app.get("/tasks", async (request) => {
+    return db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.userId, request.user.sub))
+      .orderBy(desc(tasks.createdAt));
+  });
 
-    app.get("/tasks/:id", async (request, reply) => {
-        const params = taskParamsSchema.safeParse(request.params);
+  app.get("/tasks/:id", async (request, reply) => {
+    const params = taskParamsSchema.safeParse(request.params);
 
-        if (!params.success) {
-            return sendValidationError(reply, params.error);
-        }
+    if (!params.success) {
+      return sendValidationError(reply, params.error);
+    }
 
-        const [task] = await db
-            .select()
-            .from(tasks)
-            .where(ownedTask(params.data.id, request.user.sub))
-            .limit(1);
+    const [task] = await db
+      .select()
+      .from(tasks)
+      .where(ownedTask(params.data.id, request.user.sub))
+      .limit(1);
 
-        if (!task) {
-            return reply.status(404).send({ error: "task not found" });
-        }
+    if (!task) {
+      return reply.status(404).send({ error: "task not found" });
+    }
 
-        return task;
-    });
+    return task;
+  });
 
-    app.patch("/tasks/:id", async (request, reply) => {
+  app.patch("/tasks/:id", async (request, reply) => {
     const params = taskParamsSchema.safeParse(request.params);
 
     if (!params.success) {
