@@ -14,3 +14,15 @@ export async function login(email: string, password: string) {
 
     return response.json();
 }
+
+export async function getMe(token: string) {
+    const response = await fetch(`${API_URL}/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+        throw new Error('unauthorized');
+    }
+
+    return response.json();
+}
